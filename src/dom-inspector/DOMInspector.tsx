@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useCallback } from 'react';
 
 import { DOMNodePreview } from './DOMNodePreview';
 import { TreeView } from '../tree-view/TreeView';
@@ -38,8 +38,52 @@ const domIterator = function* (data: any) {
   }
 };
 
-const DOMInspector: FC<any> = (props) => {
-  return <TreeView nodeRenderer={DOMNodePreview} dataIterator={domIterator} {...props} />;
+interface DOMInspectorProps {
+  data: any;
+  activeNode?: any;
+  onNodeSelect?: (node: any) => void;
+  [key: string]: any;
+}
+
+const DOMInspector: FC<DOMInspectorProps> = (props) => {
+  const { activeNode, onNodeSelect, ...restProps } = props;
+
+  // 创建一个自定义的节点渲染器，用于检查节点是否是活动节点
+  const nodeRenderer = useCallback(
+    (nodeProps: any) => {
+      // 检查当前节点是否是活动节点
+      const isActive =
+        activeNode &&
+        // 对于普通节点，直接比较
+        ((nodeProps.isCloseTag === undefined && nodeProps.data === activeNode) ||
+          // 对于关闭标签，检查其父节点是否是活动节点
+          (nodeProps.isCloseTag && nodeProps.data.tagName === activeNode.tagName));
+
+      // 确保 isActive 属性传递给 DOMNodePreview
+      return <DOMNodePreview {...nodeProps} isActive={isActive} />;
+    },
+    [activeNode]
+  );
+
+  // 创建一个自定义的点击处理函数，用于通知父组件节点被选中
+  const handleNodeSelect = useCallback(
+    (node: any) => {
+      if (onNodeSelect && node && !node.isCloseTag) {
+        onNodeSelect(node);
+      }
+    },
+    [onNodeSelect]
+  );
+
+  return (
+    <TreeView
+      nodeRenderer={nodeRenderer}
+      dataIterator={domIterator}
+      onNodeSelect={handleNodeSelect}
+      activeNode={activeNode}
+      {...restProps}
+    />
+  );
 };
 
 // DOMInspector.propTypes = {

@@ -6,19 +6,31 @@ import { DEFAULT_ROOT_PATH, hasChildNodes, getExpandedPaths } from './pathUtils'
 import { useStyles } from '../styles';
 
 const ConnectedTreeNode = memo<any>((props) => {
-  const { data, dataIterator, path, depth, nodeRenderer } = props;
+  const { data, dataIterator, path, depth, nodeRenderer, onNodeSelect, selectedNode, setSelectedNode } = props;
   const [expandedPaths, setExpandedPaths] = useContext(ExpandedPathsContext);
   const nodeHasChildNodes = hasChildNodes(data, dataIterator);
   const expanded = !!expandedPaths[path];
+  const isActive = selectedNode === data;
 
   const handleClick = useCallback(
-    () =>
-      nodeHasChildNodes &&
-      setExpandedPaths((prevExpandedPaths) => ({
-        ...prevExpandedPaths,
-        [path]: !expanded,
-      })),
-    [nodeHasChildNodes, setExpandedPaths, path, expanded]
+    (e) => {
+      // 更新选中的节点
+      setSelectedNode(data);
+
+      // 调用外部的节点选择回调
+      if (onNodeSelect) {
+        onNodeSelect(data);
+      }
+
+      // 处理节点展开/折叠
+      if (nodeHasChildNodes) {
+        setExpandedPaths((prevExpandedPaths) => ({
+          ...prevExpandedPaths,
+          [path]: !expanded,
+        }));
+      }
+    },
+    [nodeHasChildNodes, setExpandedPaths, path, expanded, onNodeSelect, data, setSelectedNode]
   );
 
   return (
@@ -29,6 +41,8 @@ const ConnectedTreeNode = memo<any>((props) => {
       shouldShowArrow={nodeHasChildNodes}
       // show placeholder only for non root nodes
       shouldShowPlaceholder={depth > 0}
+      // 传递 isActive 属性
+      isActive={isActive}
       // Render a node from name and data (or possibly other props like isNonenumerable)
       nodeRenderer={nodeRenderer}
       {...props}>
@@ -45,6 +59,9 @@ const ConnectedTreeNode = memo<any>((props) => {
                   key={name}
                   dataIterator={dataIterator}
                   nodeRenderer={nodeRenderer}
+                  onNodeSelect={onNodeSelect}
+                  selectedNode={selectedNode}
+                  setSelectedNode={setSelectedNode}
                   {...renderNodeProps}
                 />
               );
@@ -62,36 +79,52 @@ const ConnectedTreeNode = memo<any>((props) => {
 //   depth: PropTypes.number,
 //   expanded: PropTypes.bool,
 //   nodeRenderer: PropTypes.func,
+//   onNodeSelect: PropTypes.func,
 // };
 
-export const TreeView = memo<any>(({ name, data, dataIterator, nodeRenderer, expandPaths, expandLevel }) => {
-  const styles = useStyles('TreeView');
-  const stateAndSetter = useState({});
-  const [, setExpandedPaths] = stateAndSetter;
+export const TreeView = memo<any>(
+  ({ name, data, dataIterator, nodeRenderer, expandPaths, expandLevel, onNodeSelect, activeNode }) => {
+    const styles = useStyles('TreeView');
+    const stateAndSetter = useState({});
+    const [, setExpandedPaths] = stateAndSetter;
 
-  useLayoutEffect(
-    () =>
-      setExpandedPaths((prevExpandedPaths) =>
-        getExpandedPaths(data, dataIterator, expandPaths, expandLevel, prevExpandedPaths)
-      ),
-    [data, dataIterator, expandPaths, expandLevel]
-  );
+    // 添加内部状态来跟踪选中的节点
+    const [selectedNode, setSelectedNode] = useState(activeNode || null);
 
-  return (
-    <ExpandedPathsContext.Provider value={stateAndSetter}>
-      <ol role="tree" style={styles.treeViewOutline}>
-        <ConnectedTreeNode
-          name={name}
-          data={data}
-          dataIterator={dataIterator}
-          depth={0}
-          path={DEFAULT_ROOT_PATH}
-          nodeRenderer={nodeRenderer}
-        />
-      </ol>
-    </ExpandedPathsContext.Provider>
-  );
-});
+    // 当外部的 activeNode 属性变化时，更新内部状态
+    useLayoutEffect(() => {
+      if (activeNode !== undefined) {
+        setSelectedNode(activeNode);
+      }
+    }, [activeNode]);
+
+    useLayoutEffect(
+      () =>
+        setExpandedPaths((prevExpandedPaths) =>
+          getExpandedPaths(data, dataIterator, expandPaths, expandLevel, prevExpandedPaths)
+        ),
+      [data, dataIterator, expandPaths, expandLevel]
+    );
+
+    return (
+      <ExpandedPathsContext.Provider value={stateAndSetter}>
+        <ol role="tree" style={styles.treeViewOutline}>
+          <ConnectedTreeNode
+            name={name}
+            data={data}
+            dataIterator={dataIterator}
+            depth={0}
+            path={DEFAULT_ROOT_PATH}
+            nodeRenderer={nodeRenderer}
+            onNodeSelect={onNodeSelect}
+            selectedNode={selectedNode}
+            setSelectedNode={setSelectedNode}
+          />
+        </ol>
+      </ExpandedPathsContext.Provider>
+    );
+  }
+);
 
 // TreeView.propTypes = {
 //   name: PropTypes.string,
@@ -100,4 +133,5 @@ export const TreeView = memo<any>(({ name, data, dataIterator, nodeRenderer, exp
 //   nodeRenderer: PropTypes.func,
 //   expandPaths: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
 //   expandLevel: PropTypes.number,
+//   onNodeSelect: PropTypes.func,
 // };

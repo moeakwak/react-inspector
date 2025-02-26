@@ -112,6 +112,12 @@ export const createTheme = (theme: any) => ({
       fontSize: theme.TREENODE_FONT_SIZE,
     },
     treeNodePreviewContainer: {},
+    treeNodeHover: {
+      backgroundColor: theme.TREENODE_HOVER_BACKGROUND_COLOR,
+    },
+    treeNodeActive: {
+      backgroundColor: theme.TREENODE_ACTIVE_BACKGROUND_COLOR,
+    },
     treeNodePlaceholder: {
       whiteSpace: 'pre',
 

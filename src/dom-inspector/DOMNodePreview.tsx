@@ -52,7 +52,7 @@ const nameByNodeType = {
   11: 'DOCUMENT_FRAGMENT_NODE',
 };
 
-export const DOMNodePreview: FC<any> = ({ isCloseTag, data, expanded }) => {
+export const DOMNodePreview: FC<any> = ({ isCloseTag, data, expanded, isActive }) => {
   const styles = useStyles('DOMNodePreview');
 
   if (isCloseTag) {
@@ -113,4 +113,6 @@ export const DOMNodePreview: FC<any> = ({ isCloseTag, data, expanded }) => {
 //   data: PropTypes.object.isRequired,
 //   /** Whether the DOM node has been expanded. */
 //   expanded: PropTypes.bool.isRequired,
+//   /** Whether the DOM node is active (selected). */
+//   isActive: PropTypes.bool,
 // };

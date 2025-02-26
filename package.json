@@ -1,5 +1,5 @@
 {
-  "name": "react-inspector",
+  "name": "@moeakwak/react-inspector",
   "version": "6.0.2",
   "description": "Power of Browser DevTools inspectors right inside your React app",
   "keywords": [
